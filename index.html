@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Generador de Cartones de Bingo</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f3f4f6;
+      color: #1f2937;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header {
+      text-align: center;
+      padding: 30px 20px 10px;
+    }
+
+    header img {
+      width: 250px;
+      margin-bottom: 10px;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 28px;
+      color: #111827;
+    }
+
+    .botones {
+      margin: 20px 0;
+    }
+
+    button {
+      background-color: #4f46e5;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      margin: 5px;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #6366f1;
+    }
+
+    #cartones-container {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      width: 90%;
+      max-width: 1400px;
+      margin-bottom: 40px;
+    }
+
+    .carton {
+      background-color: white;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      padding: 10px;
+    }
+
+    .header {
+      text-align: center;
+      font-weight: bold;
+      margin-bottom: 8px;
+      color: #374151;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    th, td {
+      border: 1px solid #d1d5db;
+      width: 20%;
+      height: 32px;
+      text-align: center;
+      font-size: 14px;
+    }
+
+    th {
+      background-color: #e0e7ff;
+      color: #1e3a8a;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <img src="./Assets/photo_2025-07-05_06-05-15.jpg" alt="Logo del Bingo">
+    <h1>Generador de Cartones de Bingo</h1>
+  </header>
+
+  <div class="botones">
+    <button onclick="generarCartones()">Generar 150 Cartones</button>
+    <button onclick="generarPDF()">Exportar a PDF</button>
+  </div>
+
+  <div id="cartones-container"></div>
+
+  <script>
+    const { jsPDF } = window.jspdf;
+    let cartones = [];
+
+    function generarCarton() {
+      let carton = [];
+      let columnas = [[], [], [], [], []];
+      for (let i = 0; i < 5; i++) {
+        let numeros = [];
+        let min = 1 + i * 15;
+        let max = min + 14;
+        while (numeros.length < 5) {
+          let num = Math.floor(Math.random() * (max - min + 1)) + min;
+          if (!numeros.includes(num)) {
+            numeros.push(num);
+          }
+        }
+        numeros.sort((a, b) => a - b);
+        columnas[i] = numeros;
+      }
+      columnas[2][2] = 'X';
+      for (let fila = 0; fila < 5; fila++) {
+        carton[fila] = [];
+        for (let col = 0; col < 5; col++) {
+          carton[fila][col] = columnas[col][fila];
+        }
+      }
+      return carton;
+    }
+
+    function mostrarCarton(carton, id) {
+      let html = `<div class="carton">
+          <div class="header">Cartón #${id + 1}</div>
+          <table>
+            <tr><th>B</th><th>I</th><th>N</th><th>G</th><th>O</th></tr>`;
+      for (let fila = 0; fila < 5; fila++) {
+        html += '<tr>';
+        for (let col = 0; col < 5; col++) {
+          html += `<td>${carton[fila][col]}</td>`;
+        }
+        html += '</tr>';
+      }
+      html += '</table></div>';
+      return html;
+    }
+
+    function generarCartones() {
+      const container = document.getElementById('cartones-container');
+      container.innerHTML = '';
+      cartones = [];
+      for (let i = 0; i < 150; i++) {
+        const carton = generarCarton();
+        cartones.push(carton);
+        container.innerHTML += mostrarCarton(carton, i);
+      }
+    }
+
+    function generarPDF() {
+    if (cartones.length === 0) {
+        alert('Primero genera los cartones');
+        return;
+    }
+
+    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const marginX = 15;
+    const marginY = 20;
+    const spacingX = 10;
+    const spacingY = 10;
+    const cartonsPerRow = 2;
+    const rowsPerPage = 3;
+    const cartonWidth = (pageWidth - marginX * 2 - spacingX * (cartonsPerRow - 1)) / cartonsPerRow;
+
+    let row = 0;
+    let col = 0;
+
+    for (let i = 0; i < cartones.length; i++) {
+        const startX = marginX + col * (cartonWidth + spacingX);
+        const startY = marginY + row * (60 + spacingY); // 60 es alto aprox. de cada cartón
+
+        doc.setFontSize(12);
+        doc.setTextColor(40, 40, 40);
+        doc.text(`Cartón #${i + 1}`, startX + cartonWidth / 2, startY - 2, { align: 'center' });
+
+        const headers = [['B', 'I', 'N', 'G', 'O']];
+        const data = cartones[i];
+
+        doc.autoTable({
+            startY: startY,
+            startX: startX,
+            head: headers,
+            body: data,
+            theme: 'grid',
+            tableWidth: cartonWidth,
+            margin: { left: startX },
+            styles: {
+                fontSize: 10,
+                halign: 'center',
+                valign: 'middle',
+                cellPadding: 2,
+            },
+            headStyles: {
+                fillColor: [79, 70, 229], // azul morado
+                textColor: 255,
+                fontStyle: 'bold',
+            },
+            alternateRowStyles: {
+                fillColor: [245, 245, 245],
+            },
+            tableLineColor: [200, 200, 200],
+            tableLineWidth: 0.2,
+        });
+
+        col++;
+        if (col >= cartonsPerRow) {
+            col = 0;
+            row++;
+        }
+
+        if (row >= rowsPerPage) {
+            doc.addPage();
+            row = 0;
+        }
+    }
+
+    doc.save('cartones_de_bingo.pdf');
+}
+
+  </script>
+</body>
+</html>
