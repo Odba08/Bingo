@@ -151,36 +151,52 @@
   <script>
     const { jsPDF } = window.jspdf;
     let cartones = [];
-    const NUMEROS_TOTALES = 75;
+    
+    // Rangos para cada columna según las reglas del bingo
+    const RANGOS_COLUMNAS = {
+      'B': { min: 1, max: 15 },
+      'I': { min: 16, max: 30 },
+      'N': { min: 31, max: 45 },
+      'G': { min: 46, max: 60 },
+      'O': { min: 61, max: 75 }
+    };
 
     function generarCarton() {
-      let carton = [];
-      let numerosUsados = new Set();
-      let todosNumeros = Array.from({length: NUMEROS_TOTALES}, (_, i) => i + 1);
-      todosNumeros = shuffleArray(todosNumeros);
-      
-      for (let fila = 0; fila < 5; fila++) {
-        carton[fila] = [];
-        for (let col = 0; col < 5; col++) {
-          if (fila === 2 && col === 2) {
-            carton[fila][col] = 'LOGO'; // Marcador para el logo
-            continue;
-          }
-          
-          if (todosNumeros.length > 0) {
-            carton[fila][col] = todosNumeros.pop();
-          } else {
-            let num;
-            do {
-              num = Math.floor(Math.random() * NUMEROS_TOTALES) + 1;
-            } while (numerosUsados.has(num));
-            carton[fila][col] = num;
-            numerosUsados.add(num);
-          }
-        }
-      }
-      return carton;
+  let carton = [];
+  
+  for (let col = 0; col < 5; col++) {
+    let letra = ['B', 'I', 'N', 'G', 'O'][col];
+    let rango = RANGOS_COLUMNAS[letra];
+    let numerosColumna = [];
+    
+    // Crear array con todos los números posibles para esta columna
+    let todosNumeros = Array.from({length: rango.max - rango.min + 1}, (_, i) => i + rango.min);
+    todosNumeros = shuffleArray(todosNumeros); // Mezclar aleatoriamente
+    
+    // Tomar 5 números (excepto columna N que toma 4 por el espacio libre)
+    let cantidadNumeros = (letra === 'N') ? 4 : 5;
+    
+    for (let i = 0; i < cantidadNumeros; i++) {
+      numerosColumna.push(todosNumeros[i]);
     }
+    
+    // 🔥 ¡Se ELIMINA el ordenamiento para mantener aleatoriedad!
+    // numerosColumna.sort((a, b) => a - b);  // ← Esta línea se quita
+    
+    // Agregar espacio libre en columna N (posición central)
+    if (letra === 'N') {
+      numerosColumna.splice(2, 0, 'LOGO'); // Insertar en la posición central
+    }
+    
+    // Construir filas del cartón
+    for (let fila = 0; fila < 5; fila++) {
+      if (!carton[fila]) carton[fila] = [];
+      carton[fila][col] = numerosColumna[fila];
+    }
+  }
+  
+  return carton;
+}
 
     function shuffleArray(array) {
       for (let i = array.length - 1; i > 0; i--) {
