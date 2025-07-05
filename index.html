@@ -15,8 +15,8 @@
       font-family: 'Segoe UI', sans-serif;
       margin: 0;
       padding: 0;
-      background-color: #e0e0e0; /* Fondo gris claro como en la foto */
-      color: #d4af37; /* Dorado más intenso */
+      background-color: #e0e0e0;
+      color: #d4af37;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -155,38 +155,46 @@
     function generarCarton() {
       let carton = [];
       let columnas = [[], [], [], [], []];
+      
       for (let i = 0; i < 5; i++) {
         let numeros = [];
         let min = 1 + i * 15;
         let max = min + 14;
+        
+        // Generar números aleatorios sin ordenar
         while (numeros.length < 5) {
           let num = Math.floor(Math.random() * (max - min + 1)) + min;
           if (!numeros.includes(num)) {
             numeros.push(num);
           }
         }
-        numeros.sort((a, b) => a - b);
+        // Eliminamos el sort() para mantener el orden aleatorio
         columnas[i] = numeros;
       }
+      
+      // Celda central con el logo
       columnas[2][2] = '<img src="./Assets/photo_2025-07-05_06-05-15.jpg" class="center-logo">';
+      
+      // Construir el cartón
       for (let fila = 0; fila < 5; fila++) {
         carton[fila] = [];
         for (let col = 0; col < 5; col++) {
           carton[fila][col] = columnas[col][fila];
         }
       }
+      
       return carton;
     }
 
     function mostrarCarton(carton, id) {
       let html = `<div class="carton">
-          <div class="header">Cartón #${id + 1}</div>
+          <div class="header">Cartón Millonario #${id + 1}</div>
           <table>
             <tr><th>B</th><th>I</th><th>N</th><th>G</th><th>O</th></tr>`;
+      
       for (let fila = 0; fila < 5; fila++) {
         html += '<tr>';
         for (let col = 0; col < 5; col++) {
-          // Añadir clase especial para la celda central
           const cellClass = (fila === 2 && col === 2) ? 'free-space' : '';
           html += `<td class="${cellClass}">${carton[fila][col]}</td>`;
         }
@@ -200,6 +208,7 @@
       const container = document.getElementById('cartones-container');
       container.innerHTML = '';
       cartones = [];
+      
       for (let i = 0; i < 150; i++) {
         const carton = generarCarton();
         cartones.push(carton);
@@ -232,10 +241,10 @@
 
         doc.setFontSize(12);
         doc.setTextColor(212, 175, 55);
-        doc.text(`Cartón #${i + 1}`, startX + cartonWidth / 2, startY - 2, { align: 'center' });
+        doc.text(`Cartón Millonario #${i + 1}`, startX + cartonWidth / 2, startY - 2, { align: 'center' });
 
         const headers = [['B', 'I', 'N', 'G', 'O']];
-        const data = cartones[i].map(row => [...row]); // Copia profunda para modificar
+        const data = cartones[i].map(row => [...row]);
 
         // Reemplazar la imagen con "FREE" para el PDF
         if (data[2] && data[2][2] && typeof data[2][2] === 'string' && data[2][2].includes('img')) {
@@ -273,7 +282,6 @@
           tableLineColor: [212, 175, 55],
           tableLineWidth: 0.3,
           didDrawCell: function(data) {
-            // Resaltar la celda central
             if (data.row.index === 2 && data.column.index === 2) {
               doc.setFillColor(248, 240, 208);
               doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height, 'F');
@@ -293,7 +301,7 @@
         }
       }
 
-      doc.save('cartones_de_bingo.pdf');
+      doc.save('cartones_millonarios.pdf');
     }
   </script>
 </body>
