@@ -151,39 +151,43 @@
   <script>
     const { jsPDF } = window.jspdf;
     let cartones = [];
+    const NUMEROS_TOTALES = 75;
 
     function generarCarton() {
       let carton = [];
-      let columnas = [[], [], [], [], []];
+      let numerosUsados = new Set();
+      let todosNumeros = Array.from({length: NUMEROS_TOTALES}, (_, i) => i + 1);
+      todosNumeros = shuffleArray(todosNumeros);
       
-      for (let i = 0; i < 5; i++) {
-        let numeros = [];
-        let min = 1 + i * 15;
-        let max = min + 14;
-        
-        // Generar números aleatorios sin ordenar
-        while (numeros.length < 5) {
-          let num = Math.floor(Math.random() * (max - min + 1)) + min;
-          if (!numeros.includes(num)) {
-            numeros.push(num);
-          }
-        }
-        // Eliminamos el sort() para mantener el orden aleatorio
-        columnas[i] = numeros;
-      }
-      
-      // Celda central con el logo
-      columnas[2][2] = '<img src="./Assets/photo_2025-07-05_06-05-15.jpg" class="center-logo">';
-      
-      // Construir el cartón
       for (let fila = 0; fila < 5; fila++) {
         carton[fila] = [];
         for (let col = 0; col < 5; col++) {
-          carton[fila][col] = columnas[col][fila];
+          if (fila === 2 && col === 2) {
+            carton[fila][col] = 'LOGO'; // Marcador para el logo
+            continue;
+          }
+          
+          if (todosNumeros.length > 0) {
+            carton[fila][col] = todosNumeros.pop();
+          } else {
+            let num;
+            do {
+              num = Math.floor(Math.random() * NUMEROS_TOTALES) + 1;
+            } while (numerosUsados.has(num));
+            carton[fila][col] = num;
+            numerosUsados.add(num);
+          }
         }
       }
-      
       return carton;
+    }
+
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+      return array;
     }
 
     function mostrarCarton(carton, id) {
@@ -196,7 +200,10 @@
         html += '<tr>';
         for (let col = 0; col < 5; col++) {
           const cellClass = (fila === 2 && col === 2) ? 'free-space' : '';
-          html += `<td class="${cellClass}">${carton[fila][col]}</td>`;
+          const content = (fila === 2 && col === 2) 
+            ? '<img src="./Assets/photo_2025-07-05_06-05-15.jpg" class="center-logo">' 
+            : carton[fila][col];
+          html += `<td class="${cellClass}">${content}</td>`;
         }
         html += '</tr>';
       }
@@ -244,12 +251,10 @@
         doc.text(`Cartón Millonario #${i + 1}`, startX + cartonWidth / 2, startY - 2, { align: 'center' });
 
         const headers = [['B', 'I', 'N', 'G', 'O']];
-        const data = cartones[i].map(row => [...row]);
-
-        // Reemplazar la imagen con "FREE" para el PDF
-        if (data[2] && data[2][2] && typeof data[2][2] === 'string' && data[2][2].includes('img')) {
-          data[2][2] = 'FREE';
-        }
+        // Reemplazar 'LOGO' con 'X' para el PDF
+        const data = cartones[i].map(row => 
+          row.map(cell => cell === 'LOGO' ? 'X' : cell)
+        );
 
         doc.autoTable({
           startY: startY,
@@ -282,9 +287,14 @@
           tableLineColor: [212, 175, 55],
           tableLineWidth: 0.3,
           didDrawCell: function(data) {
+            // Resaltar la celda central con la X
             if (data.row.index === 2 && data.column.index === 2) {
               doc.setFillColor(248, 240, 208);
               doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height, 'F');
+              doc.setFontSize(14);
+              doc.setTextColor(0, 0, 0);
+              doc.text("X", data.cell.x + data.cell.width/2, data.cell.y + data.cell.height/2, 
+                {align: 'center', baseline: 'middle'});
             }
           }
         });
